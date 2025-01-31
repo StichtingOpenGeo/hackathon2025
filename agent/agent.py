@@ -52,7 +52,7 @@ class Executor:
                 "user_id": str(uuid.uuid4()),
             }
         }
-        self.checkpointer = checkpointer or AsyncSqliteSaver.from_conn_string(":memory:")
+        self.checkpointer = checkpointer or AsyncSqliteSaver.from_conn_string("checkpoints.db")
 
     @asynccontextmanager
     async def agent_context(self):
