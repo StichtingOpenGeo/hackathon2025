@@ -1,0 +1,18 @@
+[project]
+name = "agent"
+version = "0.1.0"
+description = "A conversational agent for public transit"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115.8",
+    "langchain>=0.3.16",
+    "langchain-openai>=0.3.2",
+    "langgraph>=0.2.68",
+    "langgraph-checkpoint-sqlite>=2.0.3",
+    "python-dotenv>=1.0.1",
+    "uvicorn>=0.34.0",
+]
+
+[tool.setuptools]
+py-modules = ["agent"]  # Explicitly list your modules
