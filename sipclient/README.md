@@ -14,15 +14,15 @@ The source code will be changed to include the functionality as laid out in the 
 - Clone this repository (`e.g. git clone git@github.com:StichtingOpenGeo/hackathon2025.git`) and `cd` into the "sipclient" folder.
 - Make sure you have the basic development tools such as make, autoconf and gcc installed. 
 - ```pip install numpy
-git clone --depth=1 git@github.com:pjsip/pjproject.git
-cd pjproject
-CFLAGS="-O2 -fPIC" CXXFLAGS="-O2 -fPIC" ./configure
-make dep
-make -j5
-cd pjsip-apps/src/swig/pyhon
-make
-pip install .
-```
+  git clone --depth=1 git@github.com:pjsip/pjproject.git
+  cd pjproject
+  CFLAGS="-O2 -fPIC" CXXFLAGS="-O2 -fPIC" ./configure
+  make dep
+  make -j5
+  cd pjsip-apps/src/swig/pyhon
+  make
+  pip install .
+  ```
 - Configure SIP_USERNAME, SIP_DOMAIN and SIP_PASSWORD in config.py 
 
 ## TODO
