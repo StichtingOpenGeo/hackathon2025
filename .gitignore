@@ -4,3 +4,4 @@
 **/.chainlit
 **/.env
 **/*.db
+**/config.py
