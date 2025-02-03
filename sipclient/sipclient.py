@@ -1,9 +1,13 @@
+import asyncio
 import struct
 from collections import deque
 
+import edge_tts
 import numpy as np
 import pjsua2 as pj
 import wave
+from pydub import AudioSegment
+from io import BytesIO
 
 # SIP account configuration
 try:
@@ -25,7 +29,10 @@ class RealTimePort(pj.AudioMediaPort):
     def __init__(self, wav_file_path=WAV_FILE):
         super().__init__()
         self.frames = deque()
-        self.load_wav_file(wav_file_path)
+        # self.load_wav_file(wav_file_path)
+        self.sample_rate = 16000  # PJSIP default sample rate
+        self.channels = 1  # Mono
+        self.sample_width = 2  # 16-bit PCM
 
     # This is just example code, first it should not read the entire wave file,
     def load_wav_file(self, wav_file_path):
@@ -46,6 +53,43 @@ class RealTimePort(pj.AudioMediaPort):
                 frame = audio_array[i:i + frame_size]
                 self.frames.append(pj.ByteVector(frame.tobytes()))
 
+    async def generate_speech(self, text="Ik weet even niet wat ik moet zeggen."):
+        """
+        Asynchronous speech generation using edge-tts.
+        - Buffers the entire MP3 response.
+        - Converts it to PCM (16-bit 16kHz).
+        - Stores it in self.frames for SIP transmission.
+        """
+        print(f"🎙️ Generating speech: {text}")
+
+        tts = edge_tts.Communicate(text, "nl-NL-FennaNeural", pitch="+2Hz")
+
+        mp3_buffer = bytearray()  # Buffer to store MP3 data
+
+        async for chunk in tts.stream():
+            if chunk["type"] == "audio":
+                mp3_buffer.extend(chunk["data"])  # Append MP3 chunk
+
+        # Convert full MP3 buffer to PCM
+        pcm_data = self.mp3_to_pcm(bytes(mp3_buffer))
+
+        # Store PCM data in the frames queue
+        frame_size = int((self.sample_rate * 0.02) * self.channels * self.sample_width)  # 20ms frame
+        for i in range(0, len(pcm_data), frame_size):
+            frame = pcm_data[i:i + frame_size]
+            self.frames.append(pj.ByteVector(frame))
+
+    def mp3_to_pcm(self, mp3_data):
+        """
+        Converts an MP3 byte stream to PCM (16-bit, 16kHz).
+        Ensures correct sample rate and avoids slow playback.
+        """
+        audio = AudioSegment.from_file(BytesIO(mp3_data), format="mp3")
+        audio = audio.set_frame_rate(self.sample_rate).set_channels(self.channels).set_sample_width(self.sample_width)
+        pcm_data = np.array(audio.get_array_of_samples(), dtype=np.int16).tobytes()
+
+        return pcm_data
+
     def onFrameRequested(self, frame):
         """
         :param frame: Outgoing data we are going to fill for our caller.
@@ -59,9 +103,9 @@ class RealTimePort(pj.AudioMediaPort):
             frame.size = len(frame_)
 
             # Loop the audio if we've reached the end
-            self.frames.append(frame_)
+            # self.frames.append(frame_)
         else:
-            print("silence!")
+            # print("silence!")
             # If somehow we have no frames, provide silence
             frame.type = pj.PJMEDIA_TYPE_AUDIO
             frame.buf = pj.ByteVector(b'\x00' * 320)  # 160 samples of silence (assuming 16-bit mono)
@@ -81,7 +125,6 @@ class RealTimePort(pj.AudioMediaPort):
         int_data = [struct.unpack('<h', bytes(byte_data[i:i + 2]))[0] for i in range(0, len(byte_data), 2)]
         # print(int_data)
 
-
 class Call(pj.Call):
     def onCallMediaState(self, prm):
         ci: pj.CallInfo = self.getInfo()
@@ -90,7 +133,6 @@ class Call(pj.Call):
                 if media_info.type == pj.PJMEDIA_TYPE_AUDIO:
                     print("-----------------------------------> OnCallMediaState: Audio media is active")
 
-                    # TODO: Integrate this in a single MediaPort, handling the external interaction with the LLM
                     fmt = pj.MediaFormatAudio()
                     fmt.type = pj.PJMEDIA_TYPE_AUDIO
                     fmt.clockRate = 16000
@@ -104,6 +146,8 @@ class Call(pj.Call):
                     self.rt_port.createPort("rt_port", fmt)
                     self.rt_port.startTransmit(media) # From Synthesis to VoIP
                     media.startTransmit(self.rt_port) # From VoIP to Recognition
+
+                    asyncio.run(self.rt_port.generate_speech("Ik weet even niet wat ik moet zeggen."))
 
 class MyAccount(pj.Account):
     def __init__(self, sip_username: str, sip_domain: str, sip_password: str):
