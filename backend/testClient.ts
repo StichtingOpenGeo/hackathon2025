@@ -3,7 +3,7 @@ import { createConnectTransport } from "@connectrpc/connect-node";
 import { TravelChatService } from "gen/mainService_pb";
 
 const transport = createConnectTransport({
-  baseUrl: "http://localhost:8080",
+  baseUrl: "http://pijkeh.nl:9990",
   httpVersion: "1.1",
 });
 
