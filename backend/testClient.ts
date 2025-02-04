@@ -16,5 +16,11 @@ async function main() {
     },
   });
   console.log(res);
+
+  // Implement a grpc stream
+  const feedbackStream = client.getFeedback(null);
+  for await (const feedback of feedbackStream) {
+    console.log(feedback);
+  }
 }
 void main();
