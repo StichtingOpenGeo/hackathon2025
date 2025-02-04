@@ -5,7 +5,7 @@ import userInput_pb2
 
 def run():
     # Connect to the gRPC server
-    channel = grpc.insecure_channel("8.tcp.ngrok.io:13097")
+    channel = grpc.insecure_channel("localhost:50051")
     stub = mainService_pb2_grpc.TravelChatServiceStub(channel)
 
     while True:

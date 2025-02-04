@@ -16,6 +16,7 @@ from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from langgraph.prebuilt import create_react_agent, ToolNode
 
+import mainService_pb2
 import mainService_pb2_grpc
 
 # System message defining the chatbot's role and behavior
@@ -95,30 +96,44 @@ class Executor:
 
     async def query_agent(self, message: str):
         """Sends user input to the chatbot and processes its responses."""
+        response = ""
         async with self.agent_context() as agent:
             async for event in agent.astream_events(
-                {"messages": [message]},
-                config=self.config,
-                version="v2",
+                    {"messages": [message]},
+                    config=self.config,
+                    version="v2",
             ):
-                await self.handle_event(event)
+                if event["event"] == "on_chat_model_stream":
+                    chunk = event["data"].get("chunk")
+                    if chunk:
+                        response += chunk.content
 
-            return await agent.aget_state(self.config)
+        return response
 
 class RouteGuideServicer(mainService_pb2_grpc.TravelChatServiceServicer):
-    pass
+    def __init__(self):
+        self.executor = Executor()
 
+    async def getFeedback(self, request, context):
+        return mainService_pb2.FeedbackResponse(message="Feedback received")
 
+    async def sendInput(self, request, context):
+        user_input = request.stringInput.value
+        response = self.executor.query_agent(user_input)
+
+        # Assuming your proto file has a SendInputResponse message with a 'response' field
+        return mainService_pb2.SendInputResponse(response=response)
 
 
 if __name__ == "__main__":
 
+    load_dotenv()
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     mainService_pb2_grpc.add_TravelChatServiceServicer_to_server(RouteGuideServicer(), server)
     server.add_insecure_port("[::]:50051")
     server.start()
     server.wait_for_termination()
 
-    load_dotenv()
-    executor = Executor()
-    asyncio.run(executor.run())
+    # load_dotenv()
+    # executor = Executor()
+    # asyncio.run(executor.run())
