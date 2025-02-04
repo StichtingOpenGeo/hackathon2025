@@ -11,7 +11,7 @@ async function main() {
     reply.type("text/plain");
     reply.send("Hello World!");
   });
-  await server.listen({ host: "localhost", port: 8080 });
+  await server.listen({ host: "localhost", port: 9990 });
   console.log("server is listening at", server.addresses());
   console.log("test");
 }
