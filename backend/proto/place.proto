@@ -1,0 +1,6 @@
+syntax = "proto3";
+
+message Place {
+    float latitude = 1;
+    float longitude = 2;
+}

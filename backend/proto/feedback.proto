@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+message Feedback {
+    oneof feedback {
+        SentenceFeedback sentenceFeedback = 1;
+        TimetableFeedback timetableFeedback = 2;
+    }
+}
+
+message SentenceFeedback {
+    string message = 1;
+}
+
+message TimetableFeedback {
+    string from_station = 1;
+    string notes = 2;
+    repeated DepartureEntry departures = 3;
+}
+
+message DepartureEntry {
+    string departureTime = 1;
+    string destination = 2;
+    string line = 3;
+    string platform = 4;
+    string delay = 5;
+}

@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+import "userInput.proto";
+import "feedback.proto";
+
+service TravelChatService {
+    rpc sendInput(UserInput) returns (UserInputResponse) {};
+    rpc getFeedback(google.protobuf.Empty) returns (stream Feedback) {};
+}

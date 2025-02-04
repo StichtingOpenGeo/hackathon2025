@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+message UserInput {
+    oneof input {
+        StringInput stringInput = 1;
+        AudioInput audioInput = 2;
+    }
+}
+
+message UserInputResponse {
+    bool success = 1;
+}
+
+message StringInput {
+    string value = 1;
+}
+
+message AudioInput {
+    bytes value = 1;
+}
