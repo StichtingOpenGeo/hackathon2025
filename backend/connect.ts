@@ -7,15 +7,16 @@ export default (router: ConnectRouter) => {
   router.service(TravelChatService, {
     // implements rpc Say
     async sendInput(req) {
+      console.log(req);
       return {
         success: true,
       };
     },
 
     // Make a streaming call for getFeedback
-    /* async getFeedback(req, context: HandlerContext) {
+    /* async getFeedback(call) {
       setInterval(() => {
-        
+        call.write({ message: "hello" });
       }, 1000);
     }, */
   });
@@ -23,6 +24,7 @@ export default (router: ConnectRouter) => {
   router.service(PingService, {
     // implements rpc Say
     async serviceAvailable(req) {
+      console.log(req);
       return {
         message: req.message,
       };
