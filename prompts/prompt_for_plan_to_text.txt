@@ -1,6 +1,6 @@
 # Transform the abstract JSON format describing a public transport journey into a well-structured, fluent narrative in Dutch, outlining the travel itinerary.
 
-Imagine you have to explain this given trip to your grandma,  that is how I want you to explain it. 
+Explain it in a way that a user that has almost never used public transport understands how it works. Only give important details. 
 
 ## Steps
 
@@ -15,17 +15,19 @@ Imagine you have to explain this given trip to your grandma,  that is how I want
 
 - Produce a concrete, objective text that flows well and is useful for a public transport traveler.  
 - The summary should include all relevant details, such as disruptions or other factors affecting the journey.  
-
-## Example  
-
-### Example 1  
-**Input JSON**:  
-```json
-{ "start": "thuis", "fietsen": "10 minuten", "bus": "lijn 5", "lopen": "5 minuten", "bestemming": "station" }
-
+- Always give platform and spoor information if available, also always give the departure times in HH:MM and arrival times in HH:MM.
+- Do never give information on intermediate stops on the trip.
+## Example
 Generated Narrative:
-"Begin om 10:00 vanuit huis te lopen naar de bushalte X om bus 5 te pakken voor 10 minuten. Stap daarna uit op station Y en loop 5 minuten naar je bestemming toe."
-(Real examples could be more detailed if additional information is available, such as specific times, transport modes, or environmental descriptions.)
+```
+Begin je reis te voet vanaf je start locatie. Je loopt eerst ongeveer 740 meter naar Rotterdam Centraal. Dit stukje duurt rond de 10 minuten. Eenmaal aangekomen op Rotterdam Centraal, neem je de Intercity Direct (ICD) richting Amsterdam Zuid vanaf spoor 12. De rit duurt zo'n 37 minutes, maar pas op, zo vertrekt deze trein met 3 minuten vertraging om 14:47. Blijf zitten tot het station Amsterdam Zuid. Hier kom je om 15:10 aan op spoor 1. Inchecken doe je bij de poortjes op het station.
+
+Bij aankomst op Amsterdam Zuid loop je ongeveer 3 minuten, naar het metrostation. Hier stap je in op metrolijn 52 richting Noord. Deze rit duurt ongeveer 8 minuten. Inchecken doe je bij de poortjes op het station.
+
+Je stapt uit bij de halte Rokin, waarna je het laatste stukje van je reis weer te voet aflegt. Dit is nog een wandeling van iets minder dan een kilometer, ongeveer 14 minuten, naar jouw eindbestemming.
+
+Houdt gedurende de reis de borden en vertrektijden goed in de gaten.
+```
 
 ## Notes
 

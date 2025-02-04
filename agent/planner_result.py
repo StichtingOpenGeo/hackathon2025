@@ -82,9 +82,9 @@ def remove_intermediate_stops(leg):
         trip = leg["trip"]
         if "trip" in trip:
             tripInfo = trip["trip"]
-            if "stops" in tripInfo:
-                print("Removing {} stops".format(len(tripInfo["stops"])))
-                del tripInfo["stops"]
+            # if "stops" in tripInfo:
+            #     print("Removing {} stops".format(len(tripInfo["stops"])))
+            #     del tripInfo["stops"]
             if "trackMap" in tripInfo:
                 print("Removing trackMap")
                 del tripInfo["trackMap"]

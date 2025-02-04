@@ -15,7 +15,15 @@ async def main():
         print(f"Locale: {voice['Locale']}")
 
         # Render the sentence
-        communicate = Communicate("Met Ailisa. Waar wil je naar toe?", voice["ShortName"], pitch="+2Hz", )
+        communicate = Communicate("""
+                                  Begin je reis te voet vanaf je huidige locatie. Je loopt ongeveer 740 meter naar Rotterdam Centraal, wat ongeveer 10 minuten duurt. Eenmaal aangekomen op Rotterdam Centraal, neem je de Intercity Direct richting Amersfoort Schothorst vanaf spoor 12. Deze trein vertrekt met een vertraging en zal om 12:46 vertrekken. De treinrit duurt ongeveer 32 minuten, waarbij je onderweg enkele haltes passeert.
+
+Je stapt uit bij Amsterdam Zuid. Hier kom je aan op spoor 1 om 13:18. Vervolgens loop je een korte afstand van ongeveer 140 meter naar het metrostation, waar je instapt op metrolijn 52 richting Noord. Deze metro vertrekt om 13:25 en de rit duurt ongeveer 8 minuten. Je stapt uit bij de halte Rokin om 13:33.
+
+Vanaf de halte Rokin leg je het laatste gedeelte van je reis te voet af. Dit is een wandeling van minder dan een kilometer naar je eindbestemming en duurt ongeveer 14 minuten.
+
+Wees tijdens de reis attent op eventuele veranderingen in vertrektijden en sporen. Veel succes met je reis!
+                                  """, voice["ShortName"], pitch="+2Hz", )
 
         # Generate a unique filename for each voice
         filename = f"output_{voice['ShortName']}.mp3"
