@@ -24,13 +24,13 @@ SYSTEM_PROMPT = SystemMessage(
     """
 )
 
+import api
 
 @tool
-def get_bike_count(location: str):
-    """Retrieve the number of available bikes"""
-
-    # Simulated response (In a real application, integrate with an API)
-    return f"The number of bikes in {location} is 431"
+def get_bike_count():
+    """Retrieve the number of available rental bikes (OV-fiets) at all stations."""
+    
+    return api.get_bike_availability()
 
 @tool
 def get_transit_lines(linenumber: str):
