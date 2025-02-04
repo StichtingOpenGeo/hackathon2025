@@ -23,6 +23,7 @@ SYSTEM_PROMPT = SystemMessage(
     Je geeft reisadvies, of met de trein of met de fiets, afhankelijk van de beschikbare tools.
     Hou het kort zonder vragen en opmerkingen.
     Als het laatste bericht van de LLM is, dan zoek het laatste bericht van de klant op en beantwoord dat in plaats van het bericht van de LLM.
+    Geef treinadvies als dat nog niet eerdere is gegeven, anders geef fietsadvies.
     """
 ) 
 
