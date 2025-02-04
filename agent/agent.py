@@ -34,7 +34,7 @@ def get_bike_count(location: str):
         locations = locations_req.json()['locaties'].items()
         here = [l[1] for l in locations if location.lower() in l[1]['name'].lower()]
         print(here[0])
-        return f"The number of bikes in {location} is {here[0]['extra']['rentalBikes']}"
+        return f"Het aantal OV fietsen op {location} is {here[0]['extra']['rentalBikes']}"
     except Exception as e:
         print(e)
         raise e
