@@ -29,8 +29,15 @@ SYSTEM_PROMPT = SystemMessage(
 def get_bike_count(location: str):
     """Retrieve the number of available bikes"""
 
-    # Simulated response (In a real application, integrate with an API)
-    return f"The number of bikes in {location} is 431"
+    try:
+        locations_req = requests.get("http://fiets.openov.nl/locaties.json")
+        locations = locations_req.json()['locaties'].items()
+        here = [l[1] for l in locations if location.lower() in l[1]['name'].lower()]
+        print(here[0])
+        return f"The number of bikes in {location} is {here[0]['extra']['rentalBikes']}"
+    except Exception as e:
+        print(e)
+        raise e
 
 @tool
 def get_transit_lines(linenumber: str):
