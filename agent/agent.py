@@ -20,18 +20,29 @@ SYSTEM_PROMPT = SystemMessage(
     Je bent een behulpzame assistent die helpt navigeren in het openbaar vervoer. 
     Je geeft beknopt maar vriendelijk antwoord.
     Beëindig het gesprek niet vroegtijdig.
+    Je geeft reisadvies, of met de trein of met de fiets, afhankelijk van de beschikbare tools.
+    Hou het kort zonder vragen en opmerkingen.
+    Als het laatste bericht van de LLM is, dan zoek het laatste bericht van de klant op en beantwoord dat in plaats van het bericht van de LLM.
     """
-)
-
+) 
 
 @tool
-def get_departure_times(origin: str, destination: str):
-    """Retrieve departure times for a specified journey."""
+def get_departure_times(origin: str, destination: str): 
+    """Retrieve train departure times for a specified journey."""
     if not origin or not destination:
         raise ValueError("Both origin and destination are required.")
 
     # Simulated response (In a real application, integrate with an API)
     return f"De vertrektijden vanaf {origin} met bestemming {destination} zijn om 10:00, 10:30 en 11:00."
+
+@tool
+def get_bicycle_route(origin: str, destination: str):
+    """Retrieve bicycle route for a specified journey."""
+    if not origin or not destination:
+        raise ValueError("Both origin and destination are required.")
+    
+    # Simulated response (In a real application, integrate with an API)
+    return f"De fietsroute vanaf {origin} met bestemming {destination} loopt door de Parallelweg en via de Afsluitdijk."
 
 
 class Executor:
@@ -45,7 +56,7 @@ class Executor:
     ):
         """Initialize the executor with a language model-powered agent."""
         self.model = model or ChatOpenAI(model="gpt-4o-mini", temperature=0.2)
-        self.tools = tools or [get_departure_times]
+        self.tools = tools or [get_departure_times, get_bicycle_route]
         self.config = config or {
             "configurable": {
                 "thread_id": str(uuid.uuid4()),
