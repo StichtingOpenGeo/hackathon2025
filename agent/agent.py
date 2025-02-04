@@ -4,6 +4,8 @@ import uuid
 from contextlib import contextmanager, asynccontextmanager
 from typing import Optional, List, Any
 
+from concurrent import futures
+import grpc
 from dotenv import load_dotenv
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import SystemMessage
@@ -13,6 +15,8 @@ from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from langgraph.prebuilt import create_react_agent, ToolNode
+
+import mainService_pb2_grpc
 
 # System message defining the chatbot's role and behavior
 SYSTEM_PROMPT = SystemMessage(
@@ -101,8 +105,20 @@ class Executor:
 
             return await agent.aget_state(self.config)
 
+class RouteGuideServicer(mainService_pb2_grpc.TravelChatServiceServicer):
+    pass
+
+
+
 
 if __name__ == "__main__":
+
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    mainService_pb2_grpc.add_TravelChatServiceServicer_to_server(RouteGuideServicer(), server)
+    server.add_insecure_port("[::]:50051")
+    server.start()
+    server.wait_for_termination()
+
     load_dotenv()
     executor = Executor()
     asyncio.run(executor.run())
