@@ -3,6 +3,8 @@ import logging
 import uuid
 from contextlib import contextmanager, asynccontextmanager
 from typing import Optional, List, Any
+from planner_result import get_result
+
 
 from dotenv import load_dotenv
 from langchain_core.language_models import BaseChatModel
@@ -45,7 +47,7 @@ class Executor:
     ):
         """Initialize the executor with a language model-powered agent."""
         self.model = model or ChatOpenAI(model="gpt-4o-mini", temperature=0.2)
-        self.tools = tools or [get_departure_times]
+        self.tools = tools or [get_departure_times, get_result]
         self.config = config or {
             "configurable": {
                 "thread_id": str(uuid.uuid4()),
