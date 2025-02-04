@@ -14,6 +14,7 @@ export default (router: ConnectRouter) => {
     },
 
     async *getFeedback() {
+      console.log("Feedback requested");
       yield {
         feedback: {
           case: "SentenceFeedback",
