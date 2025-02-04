@@ -24,20 +24,13 @@ SYSTEM_PROMPT = SystemMessage(
     """
 )
 
+import api
 
 @tool
-def get_bike_count(location: str):
-    """Retrieve the number of available bikes"""
-
-    try:
-        locations_req = requests.get("http://fiets.openov.nl/locaties.json")
-        locations = locations_req.json()['locaties'].items()
-        here = [l[1] for l in locations if location.lower() in l[1]['name'].lower()]
-        print(here[0])
-        return f"Het aantal OV fietsen op {location} is {here[0]['extra']['rentalBikes']}"
-    except Exception as e:
-        print(e)
-        raise e
+def get_bike_count():
+    """Retrieve the number of available rental bikes (OV-fiets) at all stations."""
+    
+    return api.get_bike_availability()
 
 @tool
 def get_transit_lines(linenumber: str):
