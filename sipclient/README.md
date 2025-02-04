@@ -8,12 +8,14 @@ The source code will be changed to include the functionality as laid out in the 
 - Python 3.12
 - numpy
 - pjsau2
+- edge_tts
+- pydub
 
 ## Quickstart
 
 - Clone this repository (`e.g. git clone git@github.com:StichtingOpenGeo/hackathon2025.git`) and `cd` into the "sipclient" folder.
-- Make sure you have the basic development tools such as make, autoconf and gcc installed. 
-- ```pip install numpy
+- Make sure you have the basic development tools such as make, autoconf and gcc installed.
+- ```pip install numpy edge_tts pydub
   git clone --depth=1 git@github.com:pjsip/pjproject.git
   cd pjproject
   CFLAGS="-O2 -fPIC" CXXFLAGS="-O2 -fPIC" ./configure
@@ -28,6 +30,5 @@ The source code will be changed to include the functionality as laid out in the 
 ## TODO
 
 1. Incorporate whisper_cpp, with streaming functionality.
-2. Decide on the text to speech library of choice for now, may for example be edge_tts.
-3. Add the barge-in detection.
-4. Decide the best architecture for interfacing with langchain, doing it within this project or outside.
+2. Add the barge-in detection.
+3. Decide the best architecture for interfacing with langchain, doing it within this project or outside.
