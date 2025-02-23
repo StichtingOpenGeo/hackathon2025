@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+import "google/protobuf/struct.proto";
+
+message ToolCall {
+  string name = 1;
+  google.protobuf.Struct args = 2;
+  string id = 3;
+}
+
+message InvalidToolCall {
+  string name = 1;
+  google.protobuf.Struct args = 2;
+  string id = 3;
+  string error = 4;
+}
+
+message ToolCallList {
+  repeated ToolCall tool_call = 1;
+}
+
+message InvalidToolCallList {
+  repeated InvalidToolCall tool_call = 1;
+}
+
+message BaseMessage {
+  string id = 1;
+  string name = 2;
+  string type = 3;
+  google.protobuf.Value content = 4;
+  google.protobuf.Struct additional_kwargs = 5;
+  google.protobuf.Struct response_metadata = 6;
+}
+
+message HumanMessage {
+  string id = 1;
+  string name = 2;
+  string type = 3;
+  google.protobuf.Value content = 4;
+  google.protobuf.Struct additional_kwargs = 5;
+  google.protobuf.Struct response_metadata = 6;
+}
+
+message SystemMessage {
+  string id = 1;
+  string name = 2;
+  string type = 3;
+  google.protobuf.Value content = 4;
+  google.protobuf.Struct additional_kwargs = 5;
+  google.protobuf.Struct response_metadata = 6;
+}
+
+message AIMessage {
+  string id = 1;
+  string name = 2;
+  string type = 3;
+  google.protobuf.Value content = 4;
+  google.protobuf.Struct additional_kwargs = 5;
+  google.protobuf.Struct response_metadata = 6;
+  ToolCallList tool_call_list = 7;
+  InvalidToolCallList invalid_tool_call_list = 8;
+}
+
+message ToolMessage {
+  string id = 1;
+  string name = 2;
+  string type = 3;
+  google.protobuf.Value content = 4;
+  google.protobuf.Struct additional_kwargs = 5;
+  google.protobuf.Struct response_metadata = 6;
+  string tool_call_id = 7;
+  google.protobuf.Value artifact = 8;
+}
