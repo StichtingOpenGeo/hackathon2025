@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import uuid
-from contextlib import contextmanager, asynccontextmanager
+from contextlib import asynccontextmanager
 from typing import Optional, List, Any
 
 from dotenv import load_dotenv
@@ -106,3 +106,10 @@ if __name__ == "__main__":
     load_dotenv()
     executor = Executor()
     asyncio.run(executor.run())
+
+
+@asynccontextmanager
+async def session_agent(session_id):
+    config = {"configurable": {"thread_id": session_id}}
+    async with Executor(config=config).agent_context() as graph:
+        yield graph, config
