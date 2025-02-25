@@ -57,7 +57,7 @@ def deserialize(data: bytes) -> LangGraphMessage:
     message = pb_type()
     message.ParseFromString(data)
     message_data = MessageToDict(message, preserving_proto_field_name=True)
-    message_data.pop("type")
+    message_data.pop("type", None)
 
     lg_type = LG_TYPE_MAP[base_message.type]
     return lg_type(**message_data)
