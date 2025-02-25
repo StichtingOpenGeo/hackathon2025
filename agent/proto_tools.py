@@ -10,16 +10,24 @@ LangGraphMessage = langgraph_messages.HumanMessage | langgraph_messages.AIMessag
 
 proto_type_map = {
     "ai": messages_pb2.AIMessage,
+    "AIMessageChunk": messages_pb2.AIMessage,
     "human": messages_pb2.HumanMessage,
+    "HumanMessageChunk": messages_pb2.HumanMessage,
     "system": messages_pb2.SystemMessage,
+    "SystemMessageChunk": messages_pb2.SystemMessage,
     "tool": messages_pb2.ToolMessage,
+    "ToolMessageChunk": messages_pb2.ToolMessage,
 }
 
 langgraph_type_map = {
     "ai": langgraph_messages.AIMessage,
+    "AIMessageChunk": langgraph_messages.AIMessageChunk,
     "human": langgraph_messages.HumanMessage,
+    "HumanMessageChunk": langgraph_messages.HumanMessageChunk,
     "system": langgraph_messages.SystemMessage,
+    "SystemMessageChunk": langgraph_messages.SystemMessageChunk,
     "tool": langgraph_messages.ToolMessage,
+    "ToolMessageChunk": langgraph_messages.ToolMessageChunk,
 }
 
 
