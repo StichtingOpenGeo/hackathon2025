@@ -1,3 +1,4 @@
+
 from langchain_core import messages as langgraph_messages
 
 from proto import messages_pb2
@@ -7,53 +8,56 @@ from google.protobuf.json_format import ParseDict, MessageToDict
 ProtoMessage = messages_pb2.BaseMessage | messages_pb2.HumanMessage | messages_pb2.AIMessage | messages_pb2.SystemMessage | messages_pb2.ToolMessage
 LangGraphMessage = langgraph_messages.HumanMessage | langgraph_messages.AIMessage | langgraph_messages.SystemMessage | langgraph_messages.ToolMessage
 
-
-proto_type_map = {
-    "ai": messages_pb2.AIMessage,
-    "AIMessageChunk": messages_pb2.AIMessage,
-    "human": messages_pb2.HumanMessage,
-    "HumanMessageChunk": messages_pb2.HumanMessage,
-    "system": messages_pb2.SystemMessage,
-    "SystemMessageChunk": messages_pb2.SystemMessage,
-    "tool": messages_pb2.ToolMessage,
-    "ToolMessageChunk": messages_pb2.ToolMessage,
+PB_TYPE_MAP = {
+    messages_pb2.human: messages_pb2.HumanMessage,
+    messages_pb2.human_chunk: messages_pb2.HumanMessage,
+    messages_pb2.ai: messages_pb2.AIMessage,
+    messages_pb2.ai_chunk: messages_pb2.AIMessage,
+    messages_pb2.system: messages_pb2.SystemMessage,
+    messages_pb2.system_chunk: messages_pb2.SystemMessage,
+    messages_pb2.tool: messages_pb2.ToolMessage,
+    messages_pb2.tool_chunk: messages_pb2.ToolMessage,
 }
 
-langgraph_type_map = {
-    "ai": langgraph_messages.AIMessage,
-    "AIMessageChunk": langgraph_messages.AIMessageChunk,
-    "human": langgraph_messages.HumanMessage,
-    "HumanMessageChunk": langgraph_messages.HumanMessageChunk,
-    "system": langgraph_messages.SystemMessage,
-    "SystemMessageChunk": langgraph_messages.SystemMessageChunk,
-    "tool": langgraph_messages.ToolMessage,
-    "ToolMessageChunk": langgraph_messages.ToolMessageChunk,
+LG_TYPE_MAP = {
+    messages_pb2.human: langgraph_messages.HumanMessage,
+    messages_pb2.human_chunk: langgraph_messages.HumanMessageChunk,
+    messages_pb2.ai: langgraph_messages.AIMessage,
+    messages_pb2.ai_chunk: langgraph_messages.AIMessageChunk,
+    messages_pb2.system: langgraph_messages.SystemMessage,
+    messages_pb2.system_chunk: langgraph_messages.SystemMessageChunk,
+    messages_pb2.tool: langgraph_messages.ToolMessage,
+    messages_pb2.tool_chunk: langgraph_messages.ToolMessageChunk,
 }
 
-
-def _langgraph_to_proto(message: LangGraphMessage) -> ProtoMessage:
-    proto_cls = proto_type_map[message.type]
-    message_data = langgraph_messages.message_to_dict(message)["data"]
-    return ParseDict(message_data, proto_cls(), ignore_unknown_fields=True)
-
-
-def _proto_to_langgraph(message: ProtoMessage) -> LangGraphMessage:
-    message_data = MessageToDict(message, preserving_proto_field_name=True)
-    langgraph_cls = langgraph_type_map[message.type]
-    return langgraph_cls(**message_data)
+def _message_type_value(message: LangGraphMessage) -> messages_pb2.MessageType:
+    type_name = message.type.removesuffix("MessageChunk").lower()
+    type_name += "_chunk" if message.type.endswith("MessageChunk") else ""
+    return messages_pb2.MessageType.Value(type_name)
 
 
 def serialize(message: LangGraphMessage) -> bytes:
-    return _langgraph_to_proto(message).SerializeToString()
+    message_type = _message_type_value(message)
+    pb_type = PB_TYPE_MAP[message_type]
+    message_data = message.model_dump(exclude={"type"})
+    message_proto = ParseDict(
+        {"type": message_type, **message_data},
+        pb_type(),
+        ignore_unknown_fields=True
+    )
+    return message_proto.SerializeToString()
 
 
 def deserialize(data: bytes) -> LangGraphMessage:
     # read first few shared bytes to infer message type
     base_message = messages_pb2.BaseMessage()
     base_message.ParseFromString(data)
-    message_cls = proto_type_map[base_message.type]
+    pb_type = PB_TYPE_MAP[base_message.type]
 
-    message = message_cls()
+    message = pb_type()
     message.ParseFromString(data)
+    message_data = MessageToDict(message, preserving_proto_field_name=True)
+    message_data.pop("type")
 
-    return _proto_to_langgraph(message)
+    lg_type = LG_TYPE_MAP[base_message.type]
+    return lg_type(**message_data)
