@@ -4,8 +4,7 @@ import os
 import random
 import uuid
 from asyncio import Future
-from collections.abc import AsyncGenerator
-from typing import Any, Coroutine
+from typing import Coroutine
 
 from aiomqtt import Client
 from dotenv import load_dotenv
@@ -14,7 +13,7 @@ from websockets import broadcast, route
 from werkzeug.routing import Map, Rule
 
 import proto_tools
-from agent import session_agent
+from agent import agent_response, update_session_state
 
 MQTT_BROKER = os.getenv("MQTT_BROKER", "localhost")
 MQTT_PORT = int(os.getenv("MQTT_PORT", "1883"))
@@ -42,14 +41,14 @@ async def publish_messages(client, websocket, session_id):
             proto_tools.serialize(message),
             qos=2,
         )
-        logger.info(f"message published {message=} {session_id=}")
+        logger.info(f"message published {message.id=} {message.type=}")
         async for message, metadata in agent_response(message, session_id):
             await client.publish(
                 f"sessions/{session_id}",
                 proto_tools.serialize(message),
                 qos=2,
             )
-            logger.info(f"message published {message=} {session_id=}")
+            logger.info(f"message published {message.id=} {message.type=}")
 
 
 async def subscribe_messages(client, _, session_id):
@@ -60,23 +59,13 @@ async def subscribe_messages(client, _, session_id):
         # skip messages that were sent by the user itself
         if message.name == "user":
             continue
+
         session_connections = [
             connection
             for connection, meta in connections.items()
             if meta['session_id'] == session_id
         ]
         broadcast(session_connections, mqtt_message.payload)
-
-
-async def agent_response(user_message, session_id) -> AsyncGenerator[Any]:
-    async with session_agent(session_id) as (graph, config):
-        stream = graph.astream(
-            {"messages": [user_message]},
-            stream_mode="messages",
-            config=config,
-        )
-        async for item in stream:
-            yield item
 
 
 async def mock_message_producer():
@@ -90,16 +79,17 @@ async def mock_message_producer():
         async with Client(MQTT_BROKER, MQTT_PORT) as client:
             message = AIMessage(content="There is a delay on your route!")
             session_id = metadata['session_id']
-
-            async with session_agent(session_id) as (graph, config):
-                await graph.aupdate_state(config, {"messages": [message]}, as_node="agent")
-
+            await update_session_state(
+                session_id,
+                {"messages": message},
+                as_node="agent",
+            )
             await client.publish(
                 f"sessions/{session_id}",
                 proto_tools.serialize(message),
                 qos=2,
             )
-            logger.info(f"message published {message=} {session_id=}")
+            logger.info(f"message published {message.id=} {message.type=}")
 
 
 async def channel_handler(websocket, session_id):
