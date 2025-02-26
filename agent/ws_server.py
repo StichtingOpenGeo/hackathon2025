@@ -3,15 +3,15 @@ import logging
 import os
 import random
 import uuid
+from asyncio import Future
 from collections.abc import AsyncGenerator
-from typing import Any
+from typing import Any, Coroutine
 
 from aiomqtt import Client
 from dotenv import load_dotenv
-from langchain_core.messages import HumanMessage, AIMessage
-from websockets import broadcast
+from langchain_core.messages import AIMessage, HumanMessage
+from websockets import broadcast, route
 from werkzeug.routing import Map, Rule
-from websockets.asyncio.router import route
 
 import proto_tools
 from agent import session_agent
@@ -107,16 +107,24 @@ async def channel_handler(websocket, session_id):
         connections[websocket] = {"session_id": session_id}
         async with Client(MQTT_BROKER, MQTT_PORT) as client:
             logger.info(f"client connected {session_id=}")
-            tasks = [
+            await race([
                 asyncio.create_task(publish_messages(client, websocket, session_id)),
                 asyncio.create_task(subscribe_messages(client, websocket, session_id)),
-            ]
-            _, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-            for task in pending:
-                task.cancel()
+            ])
     finally:
         logger.info(f"client disconnected {session_id=}")
         del connections[websocket]
+
+
+async def race(tasks: [Future | Coroutine], pending_action='cancel', raise_exception=True):
+    done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+    for task in pending:
+        getattr(task, pending_action)()
+    for task in done:
+        task_exc = task.exception()
+        if raise_exception and task_exc:
+            raise task_exc
+    return done, pending
 
 
 url_map = Map([Rule("/sessions/<session_id>", endpoint=channel_handler)])
