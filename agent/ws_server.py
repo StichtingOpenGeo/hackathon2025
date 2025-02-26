@@ -3,10 +3,11 @@ import logging
 import os
 import random
 import uuid
-from contextlib import asynccontextmanager
+from collections.abc import AsyncGenerator
+from typing import Any
 
-from dotenv import load_dotenv
 from aiomqtt import Client
+from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage, AIMessage
 from websockets import broadcast
 from werkzeug.routing import Map, Rule
@@ -22,70 +23,60 @@ APP_HOST = os.getenv("APP_HOST", "localhost")
 APP_PORT = int(os.getenv("APP_PORT", "8765"))
 
 
-@asynccontextmanager
-async def mqtt_client():
-    async with Client(MQTT_BROKER, MQTT_PORT) as client:
-        yield client
-
-
 connections = {}
-
 
 
 logger = logging.getLogger("agent.ws_server")
 
 
-
-async def publish_messages(websocket, session_id):
+async def publish_messages(client, websocket, session_id):
     """Receives websocket messages and publishes them on the session specific topic."""
     async for ws_message in websocket:
-        async with mqtt_client() as client:
-            message = HumanMessage(
-                id=str(uuid.uuid4()),
-                content=ws_message,
-                name="user",
-            )
+        message = HumanMessage(
+            id=str(uuid.uuid4()),
+            content=ws_message,
+            name="user",
+        )
+        await client.publish(
+            f"sessions/{session_id}",
+            proto_tools.serialize(message),
+            qos=2,
+        )
+        logger.info(f"message published {message=} {session_id=}")
+        async for message, metadata in agent_response(message, session_id):
             await client.publish(
                 f"sessions/{session_id}",
                 proto_tools.serialize(message),
                 qos=2,
             )
             logger.info(f"message published {message=} {session_id=}")
-            await agent_response(message, session_id)
 
 
-async def subscribe_messages(_, session_id):
+async def subscribe_messages(client, _, session_id):
     """Subscribes to mqtt session topic and broadcasts to all websockets connected to the session."""
-    async with mqtt_client() as client:
-        await client.subscribe(f"sessions/{session_id}", qos=2)
-        async for mqtt_message in client.messages:
-            message = proto_tools.deserialize(mqtt_message.payload)
-            # skip messages that were sent by the user itself
-            if message.name == "user":
-                continue
-            session_connections = [
-                connection
-                for connection, meta in connections.items()
-                if meta['session_id'] == session_id
-            ]
-            broadcast(session_connections, mqtt_message.payload)
+    await client.subscribe(f"sessions/{session_id}", qos=2)
+    async for mqtt_message in client.messages:
+        message = proto_tools.deserialize(mqtt_message.payload)
+        # skip messages that were sent by the user itself
+        if message.name == "user":
+            continue
+        session_connections = [
+            connection
+            for connection, meta in connections.items()
+            if meta['session_id'] == session_id
+        ]
+        broadcast(session_connections, mqtt_message.payload)
 
 
-async def agent_response(user_message, session_id):
+async def agent_response(user_message, session_id) -> AsyncGenerator[Any]:
     async with session_agent(session_id) as (graph, config):
-        async with mqtt_client() as client:
-            stream = graph.astream(
-                {"messages": [user_message]},
-                stream_mode="messages",
-                config=config,
-            )
-            async for message, _ in stream:
-                await client.publish(
-                    f"sessions/{session_id}",
-                    proto_tools.serialize(message),
-                    qos=2,
-                )
-                logger.info(f"message published {message=} {session_id=}")
+        stream = graph.astream(
+            {"messages": [user_message]},
+            stream_mode="messages",
+            config=config,
+        )
+        async for item in stream:
+            yield item
 
 
 async def mock_message_producer():
@@ -96,7 +87,7 @@ async def mock_message_producer():
         if metadata is None: # no active sessions
             continue
 
-        async with mqtt_client() as client:
+        async with Client(MQTT_BROKER, MQTT_PORT) as client:
             message = AIMessage(content="There is a delay on your route!")
             session_id = metadata['session_id']
 
@@ -114,14 +105,15 @@ async def mock_message_producer():
 async def channel_handler(websocket, session_id):
     try:
         connections[websocket] = {"session_id": session_id}
-        logger.info(f"client connected {session_id=}")
-        tasks = [
-            asyncio.create_task(publish_messages(websocket, session_id)),
-            asyncio.create_task(subscribe_messages(websocket, session_id)),
-        ]
-        _, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-        for task in pending:
-            task.cancel()
+        async with Client(MQTT_BROKER, MQTT_PORT) as client:
+            logger.info(f"client connected {session_id=}")
+            tasks = [
+                asyncio.create_task(publish_messages(client, websocket, session_id)),
+                asyncio.create_task(subscribe_messages(client, websocket, session_id)),
+            ]
+            _, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+            for task in pending:
+                task.cancel()
     finally:
         logger.info(f"client disconnected {session_id=}")
         del connections[websocket]
