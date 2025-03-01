@@ -5,4 +5,5 @@
 **/.env
 **/*.db
 **/config.py
+**/proto/*.py*
 *.py[cod]

@@ -2,18 +2,20 @@ import asyncio
 import logging
 import uuid
 from contextlib import asynccontextmanager
-from typing import Optional, List, Any
+from typing import Optional, List, Any, AsyncGenerator
 
-import requests
 from dotenv import load_dotenv
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import SystemMessage
+from langchain_core.messages import SystemMessage, BaseMessage
 from langchain_core.runnables.schema import StreamEvent
 from langchain_core.tools import tool, BaseTool
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from langgraph.prebuilt import create_react_agent, ToolNode
+import requests
+
+import api
 
 # System message defining the chatbot's role and behavior
 SYSTEM_PROMPT = SystemMessage(
@@ -24,12 +26,11 @@ SYSTEM_PROMPT = SystemMessage(
     """
 )
 
-import api
 
 @tool
 def get_bike_count():
     """Retrieve the number of available rental bikes (OV-fiets) at all stations."""
-    
+
     return api.get_bike_availability()
 
 @tool
@@ -132,3 +133,26 @@ if __name__ == "__main__":
     load_dotenv()
     executor = Executor()
     asyncio.run(executor.run())
+
+
+@asynccontextmanager
+async def session_agent(session_id):
+    config = {"configurable": {"thread_id": session_id}}
+    async with Executor(config=config).agent_context() as graph:
+        yield graph, config
+
+
+async def agent_response(message, session_id) -> AsyncGenerator[BaseMessage, None]:
+    async with session_agent(session_id) as (graph, config):
+        stream = graph.astream(
+            {"messages": [message]},
+            stream_mode="messages",
+            config=config,
+        )
+        async for item in stream:
+            yield item
+
+
+async def update_session_state(session_id, state, **kwargs):
+    async with session_agent(session_id) as (graph, config):
+        await graph.aupdate_state(config, state, **kwargs)
